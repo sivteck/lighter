@@ -8,7 +8,8 @@ async function lightsUp(filename) {
   console.log(urls);
   for (const url of urls) {
     try {
-      await runPSI(url);
+      await runPSI(url, "mobile");
+      await runPSI(url, "desktop");
       // await takeScreenshot(url)
     } catch (err) {
       console.log(err);

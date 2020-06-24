@@ -3,13 +3,14 @@ lighter
 
 Fire up your performance testing game!
 
-Edit urls.txt and
+Edit config.js and add your google api key in googleAPIKey file,
 
 `npm run lightup`
 
 Goals
 -----
-
+[x] Calculate and output average of `n` runs
 [ ] Frontend to add URLs
-[ ] Accept Google API key
-[ ] Output CSV
+[x] Accept Google API key
+[ ] Output Proper CSV
+
