@@ -1,0 +1,22 @@
+{
+  "name": "lighter",
+  "version": "1.0.0",
+  "description": "lighting up the lighthouse",
+  "main": "start.js",
+  "dependencies": [
+    "psi",
+    "puppeteer"
+  ],
+  "scripts": {
+    "lightup": "node start.js urls.txt",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "performance",
+    "metrics",
+    "ahead",
+    "plsBfaster"
+  ],
+  "author": "Sivaram Sivaraj Balakrishnan",
+  "license": "MIT"
+}
