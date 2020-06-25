@@ -14,6 +14,20 @@ async function loadUrls(source, type = "file") {
   return urls.toString().split("\n").slice(0, -1);
 }
 
+function addUnit(metric) {
+  if (
+    [
+      "first-contentful-paint",
+      "largest-contentful-paint",
+      "interactive",
+      "total-blocking-time",
+    ].includes(metric)
+  ) {
+    return "ms";
+  }
+  return "";
+}
+
 function outputCSVString(audits, numberOfRuns) {
   const results = {};
   let metrics = "";
@@ -34,7 +48,8 @@ function outputCSVString(audits, numberOfRuns) {
     results[metric].numericValue /= numberOfRuns;
     metrics += metric + ",";
     scores += String(results[metric].score.toFixed(2)) + ",";
-    values += String(results[metric].numericValue.toFixed(2)) + ",";
+    values +=
+      String(results[metric].numericValue.toFixed(2)) + addUnit(metric) + ",";
   }
 
   return { metrics, scores, values };
@@ -45,7 +60,7 @@ async function runPSI(url, strategy) {
 
   for (let i = 0; i < numberOfRuns; i++) {
     const { data } = await psi(url, {
-      key: gKey, 
+      key: gKey,
       strategy,
     });
     audits.push({ ...data.lighthouseResult.audits });
@@ -72,4 +87,36 @@ async function takeScreenshot(url) {
   await browser.close();
 }
 
-module.exports = { loadUrls, runPSI, takeScreenshot };
+async function calcTime(perfTimes) {
+  const navigationStart = perfTimes.navigationStart;
+  for (const key in perfTimes) {
+    perfTimes[key] = perfTimes[key] - navigationStart;
+  }
+}
+
+async function puppetCSVOutput(perfTimes, url) {
+  const responseTime = String(perfTimes['responseEnd'] - perfTimes['requestStart']) + ' ms'
+  const ttfb = String(perfTimes['responseStart']) + ' ms'
+  console.log(`CSV OUTPUT | URL: ${url}`)
+  console.log(`Response Time, TTFB`)
+  console.log(`${responseTime}, ${ttfb}`)
+}
+
+async function runPuppet(url) {
+  try {
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.goto(url);
+    const performanceTiming = JSON.parse(
+      await page.evaluate(() => JSON.stringify(window.performance.timing))
+    );
+    calcTime(performanceTiming)
+    console.log(performanceTiming);
+    puppetCSVOutput(performanceTiming, url);
+    await browser.close();
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+module.exports = { loadUrls, runPSI, runPuppet, takeScreenshot };
