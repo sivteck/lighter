@@ -29,11 +29,12 @@ function addUnit(metric) {
 }
 
 function outputCSVString(audits, numberOfRuns) {
-  const results = {};
+  const results = { score: 0 };
   let metrics = "";
   let scores = "";
   let values = "";
   for (const audit of audits) {
+    results.score += audit.score;
     for (const metric of metricsOfInterest) {
       if (!results[metric]) results[metric] = { score: 0, numericValue: 0 };
       if (audit[metric].score && audit[metric].numericValue) {
@@ -42,7 +43,7 @@ function outputCSVString(audits, numberOfRuns) {
       }
     }
   }
-
+  results.score /= numberOfRuns;
   for (const metric of metricsOfInterest) {
     results[metric].score /= numberOfRuns;
     results[metric].numericValue /= numberOfRuns;
@@ -52,7 +53,7 @@ function outputCSVString(audits, numberOfRuns) {
       String(results[metric].numericValue.toFixed(2)) + addUnit(metric) + ",";
   }
 
-  return { metrics, scores, values };
+  return { metrics, scores, values, results };
 }
 
 async function runPSI(url, strategy) {
@@ -63,13 +64,23 @@ async function runPSI(url, strategy) {
       key: gKey,
       strategy,
     });
-    audits.push({ ...data.lighthouseResult.audits });
+
+    audits.push({
+      ...data.lighthouseResult.audits,
+      score: data.lighthouseResult.categories.performance.score,
+    });
   }
 
-  const { metrics, scores, values } = outputCSVString(audits, numberOfRuns);
+  const { metrics, scores, values, results } = outputCSVString(
+    audits,
+    numberOfRuns
+  );
   console.log(
     `FOR URL: ${url} | Number of Runs: ${numberOfRuns} | Strategy: ${strategy} \n Metrics, Scores and Values \n All time values are in ms`
   );
+
+  console.log("JSON OUTPUT");
+  console.log(results);
   console.log("CSV OUTPUT");
   console.log(metrics);
   console.log(scores);
@@ -95,11 +106,12 @@ async function calcTime(perfTimes) {
 }
 
 async function puppetCSVOutput(perfTimes, url) {
-  const responseTime = String(perfTimes['responseEnd'] - perfTimes['requestStart']) + ' ms'
-  const ttfb = String(perfTimes['responseStart']) + ' ms'
-  console.log(`CSV OUTPUT | URL: ${url}`)
-  console.log(`Response Time, TTFB`)
-  console.log(`${responseTime}, ${ttfb}`)
+  const responseTime =
+    String(perfTimes["responseEnd"] - perfTimes["requestStart"]) + " ms";
+  const ttfb = String(perfTimes["responseStart"]) + " ms";
+  console.log(`CSV OUTPUT | URL: ${url}`);
+  console.log(`Response Time, TTFB`);
+  console.log(`${responseTime}, ${ttfb}`);
 }
 
 async function runPuppet(url) {
@@ -110,7 +122,7 @@ async function runPuppet(url) {
     const performanceTiming = JSON.parse(
       await page.evaluate(() => JSON.stringify(window.performance.timing))
     );
-    calcTime(performanceTiming)
+    calcTime(performanceTiming);
     console.log(performanceTiming);
     puppetCSVOutput(performanceTiming, url);
     await browser.close();
